@@ -55,7 +55,7 @@ export default function NewPost() {
         </div>
         <div>
           <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
-            内容
+            本文
           </label>
           <textarea
             id="content"
