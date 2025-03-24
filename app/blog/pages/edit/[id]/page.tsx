@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useParams } from 'next/navigation';
+import { useParams } from 'next/navigation'; // useParamsをインポート
 
 export default function EditPost() {
   const { id } = useParams(); // URLパラメータからidを取得
@@ -30,15 +30,15 @@ export default function EditPost() {
     setIsSubmitting(true);
     try {
       const response = await fetch(`/api/posts/${id}`, {
-        method: 'PUT', // 更新処理のためのHTTPメソッド
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, content }), // 更新するデータ
+        body: JSON.stringify({ title, content }),
       });
 
       if (response.ok) {
-        router.push('/blog'); // 更新後にリダイレクト
+        router.push('/blog');
         router.refresh();
       } else {
         throw new Error('Failed to update post');

@@ -33,7 +33,7 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
         ))}
       </div>
       <div className="flex justify-end ">
-        <Link href="/blog/edit/page.tsx">
+        <Link href="/blog/pages/edit">
           <button className="bg-blue-500 text-white px-4 py-2 mb-2 rounded-lg hover:bg-blue-600">
             編集
           </button>

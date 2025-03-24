@@ -12,11 +12,18 @@ async function getPost(id: string): Promise<Post | null> {
 }
 
 export default async function BlogPost({ params }: { params: { id: string } }) {
-  const post = await getPost(params.id);
-
-  if (!post) {
-    return <div>投稿が見つかりません</div>;
+    const id = params.id; // paramsをawaitせずに直接使用
+  
+    if (!id) {
+      return <div>投稿が見つかりません</div>; // idが存在しない場合の処理
+    }
+  
+    const post = await getPost(id); // 修正後
+  
+    if (!post) {
+      return <div>投稿が見つかりません</div>;
+    }
+  
+    return <BlogPostDetail post={post} />;
   }
-
-  return <BlogPostDetail post={post} />;
-}
+  
