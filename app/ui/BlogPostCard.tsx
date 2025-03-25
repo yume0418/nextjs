@@ -18,6 +18,22 @@ export default function BlogPostCard({ post }: BlogPostCardProps) {
             <span>{post.author}</span>
             <span>{new Date(post.createdAt).toLocaleDateString()}</span>
           </div>
+          {post.category && (
+            <div className="mt-2">
+              <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
+                {post.category.name}
+              </span>
+            </div>
+          )}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-2">
+              {post.tags.map((tag, index) => (
+                <span key={index} className="inline-block bg-blue-200 rounded-full px-3 py-1 text-sm font-semibold text-blue-700 mr-2 mb-2">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </article>
     </Link>

@@ -22,10 +22,28 @@ export default async function HOME() {
             <Link href={`/blog/${post.id}`} className="text-xl font-semibold text-blue-600 hover:underline">
               {post.title}
             </Link><br />
-            <Link href={"/about"} className="text-gray-600">
+            <Link href={"/about/page.tsx"} className="text-gray-600">
               {post.author}
             </Link>
             <span className="text-gray-400"> - {new Date(post.createdAt).toLocaleDateString()}</span>
+            <div>
+            {post.category && (
+            <div className="mt-2">
+              <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold">
+                {post.category.name}
+              </span>
+            </div>
+          )}
+          {post.tags && post.tags.length > 0 && (
+            <div className="mt-2">
+              {post.tags.map((tag, index) => (
+                <span key={index} className="inline-block bg-blue-200 rounded-full px-3 py-1 text-sm font-semibold mr-2 mb-2">
+                  {tag}
+                </span>
+              ))}
+            </div>
+          )}
+            </div>
           </li>
         ))}
       </ul>
