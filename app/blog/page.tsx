@@ -2,8 +2,13 @@ import { Post, Category, Tag } from '@/app/lib/interface/Post';
 import BlogPostCard from '@/app/ui/BlogPostCard';
 import PostFilter from '@/app/ui/PostFilter';
 
-async function getPosts(searchParams: { category?: string, tag?: string }): Promise<Post[]> {
-  const params = new URLSearchParams(searchParams as any); 
+interface SearchParams {
+  category?: string;
+  tag?: string;
+}
+
+async function getPosts(searchParams: SearchParams): Promise<Post[]> {
+  const params = new URLSearchParams(searchParams); // anyを削除
   const res = await fetch(`http://localhost:3000/api/posts?${params.toString()}`, { cache: 'no-store' });
   if (!res.ok) {
     throw new Error('Failed to fetch posts');
@@ -28,7 +33,7 @@ async function getTags(): Promise<Tag[]> {
   return res.json();
 }
 
-export default async function BlogList({ searchParams }: { searchParams: { category?: string, tag?: string } }) {
+export default async function BlogList({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams; // 追加
   const [posts, categories, tags] = await Promise.all([
     getPosts(params), // 修正

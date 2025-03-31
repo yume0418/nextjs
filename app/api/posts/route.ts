@@ -1,38 +1,64 @@
 import { NextResponse } from 'next/server';
 import { PrismaClient, Prisma } from '@prisma/client';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/app/lib/auth';
 
 const prisma = new PrismaClient();
 
 export async function GET(request: Request) {
+
   const { searchParams } = new URL(request.url);
+  const search = searchParams.get('search') || '';
   const category = searchParams.get('category');
   const tag = searchParams.get('tag');
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const limit = parseInt(searchParams.get('limit') || '12', 10);
+
+  const skip = (page - 1) * limit;
 
   try {
-    const where: Prisma.PostWhereInput = {};
+    const whereConditions: Prisma.PostWhereInput[] = [];
+
+    if (search) {
+      whereConditions.push({
+        OR: [
+          { title: { contains: search, mode: 'insensitive' } },
+          { content: { contains: search, mode: 'insensitive' } },
+        ],
+      });
+    }
 
     if (category) {
-      where.category = { id: parseInt(category) };
+      whereConditions.push({ category: { id: parseInt(category) } });
     }
 
     if (tag) {
-      where.tags = { some: { tag: { name: tag } } };
+      whereConditions.push({ tags: { some: { tag: { name: tag } } } });
     }
 
-    const posts = await prisma.post.findMany({
-      where,
-      include: {
-        category: true,
-        tags: {
-          include: {
-            tag: true,
+    const where: Prisma.PostWhereInput = whereConditions.length > 0
+      ? { AND: whereConditions }
+      : {};
+
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where,
+        include: {
+          category: true,
+          tags: {
+            include: {
+              tag: true,
+            },
           },
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({ where }),
+    ]);
 
     const formattedPosts = posts.map(post => ({
       ...post,
@@ -40,7 +66,14 @@ export async function GET(request: Request) {
       tags: post.tags.map(pt => pt.tag.name),
     }));
 
-    return NextResponse.json({ posts: formattedPosts });
+    return NextResponse.json({
+      posts: formattedPosts,
+      pagination: {
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        totalItems: total,
+      },
+    });
   } catch (error) {
     console.error('Error fetching posts:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -49,15 +82,31 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const { title, content, author, category, tags } = await request.json();
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user) {
+      // 認証されていない場合、401エラーを返す
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+    }
+
+    const author = session?.user?.name ?? ""
+    const { title, content, category, tags } = await request.json();
 
     const result = await prisma.$transaction(async (prisma) => {
+      const whereConditions: Prisma.PostWhereInput[] = [
+        { title },
+        { content },
+        { author },
+      ];
+
       // カテゴリの挿入または取得
       const categoryResult = await prisma.category.upsert({
         where: { name: category },
         update: { name: category },
         create: { name: category },
       });
+
+      whereConditions.push({ category: { id: categoryResult.id } });
 
       // 投稿の挿入
       const newPost = await prisma.post.create({

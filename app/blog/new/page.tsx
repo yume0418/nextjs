@@ -1,22 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 export default function NewPost() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [author, setAuthor] = useState('');
   const [category, setCategory] = useState('');
-  const [tags, setTags] = useState('');  // カンマ区切りのタグ入力
+  const [tags, setTags] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+    }
+  }, [status, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!session || !session.user) {
+      alert('セッションが無効です。再度ログインしてください。');
+      router.push('/auth/signin');
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');  // タグを配列に変換
+      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: {
@@ -25,9 +37,8 @@ export default function NewPost() {
         body: JSON.stringify({
           title,
           content,
-          author,
           category,
-          tags: tagsArray,  // タグを配列として送信
+          tags: tagsArray,
         }),
       });
 
@@ -70,23 +81,10 @@ export default function NewPost() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
             rows={5}
             required
           ></textarea>
-        </div>
-        <div>
-          <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
-            著者
-          </label>
-          <input
-            type="text"
-            id="author"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-            required
-          />
         </div>
         <div>
           <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50">
