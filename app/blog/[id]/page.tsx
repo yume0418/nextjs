@@ -3,12 +3,11 @@ import BlogPostDetail from '@/app/ui/BlogPostDetail';
 import CommentSection from '@/app/ui/CommentSection';
 import RelatedPosts from '@/app/ui/RelatedPosts';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
 
 async function getPost(id: string): Promise<Post | null> {
-  const res = await fetch(`${siteUrl}/api/posts/${id}`, { cache: 'no-store' });
+  const res = await fetch(`${siteUrl}/api/detail/${id}`, { cache: 'no-store' });
   if (!res.ok) {
     if (res.status === 404) {
       notFound();
@@ -16,7 +15,11 @@ async function getPost(id: string): Promise<Post | null> {
     throw new Error('Failed to fetch post');
   }
   const data = await res.json();
-  return data.post;
+  
+  // 取得したデータにタグが含まれているか確認
+  console.log('Fetched Post Data:', data);
+
+  return data;
 }
 
 async function getComments(postId: string): Promise<Comment[]> {
@@ -48,14 +51,16 @@ async function getRelatedPosts(postId: string): Promise<Post[]> {
 }
 
 export default async function BlogPost({ params }: { params: { id: string } }) {
+  const { id } = params;
+
   const [post, relatedPosts, comments] = await Promise.all([
-    getPost(params.id),
-    getRelatedPosts(params.id),
-    getComments(params.id)
+    getPost(id),
+    getRelatedPosts(id),
+    getComments(id)
   ]);
 
   if (!post) {
-    notFound();
+    return <div>投稿が見つかりません</div>;
   }
 
   return (
@@ -63,12 +68,6 @@ export default async function BlogPost({ params }: { params: { id: string } }) {
       <BlogPostDetail post={post} />
       <RelatedPosts posts={relatedPosts} />
       <CommentSection postId={post.id} initialComments={comments} />
-      <Link
-        href={`/blog/edit/${post.id}`} 
-        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-      >
-        編集
-      </Link>
     </div>
   );
 }

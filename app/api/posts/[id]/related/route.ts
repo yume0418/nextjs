@@ -7,7 +7,9 @@ export async function GET(
   request: Request,
   { params }: { params: { id: string } } // 正しい型を使用
 ) {
-  const postId = parseInt(params.id);
+  // paramsを非同期に取得
+  const { id } = await params;
+  const postId = parseInt(id);
 
   try {
     // 現在の投稿を取得

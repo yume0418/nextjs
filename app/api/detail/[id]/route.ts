@@ -5,9 +5,9 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+// 投稿取得 (GET)
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const { id } = params;
 
   if (!id) {
     return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -30,70 +30,33 @@ export async function GET(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
 
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  const { id } = params;
 
   if (!id) {
     return NextResponse.json({ error: 'ID is required' }, { status: 400 });
   }
 
   try {
-    const { title, content, category, tags } = await request.json();
+    const { title, content } = await request.json(); // category, tags を削除
 
     const updatedPost = await prisma.post.update({
       where: { id: Number(id) },
       data: {
         title,
         content,
-        category: {
-          connectOrCreate: {
-            where: { name: category },
-            create: { name: category },
-          },
-        },
-        tags: {
-          set: tags.map((tag: string) => ({ name: tag })),
-        },
       },
-      include: { category: true, tags: true },
     });
 
     return NextResponse.json(updatedPost);
   } catch (error) {
     console.error('Error updating post:', error);
     return NextResponse.json({ error: 'An error occurred while updating the post' }, { status: 500 });
-  }
-}
-
-export async function DELETE(request: Request) {
-  const session = await getServerSession(authOptions);
-
-  if (!session || !session.user) {
-    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
-
-  if (!id) {
-    return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-  }
-
-  try {
-    await prisma.post.delete({
-      where: { id: Number(id) },
-    });
-
-    return NextResponse.json({ message: 'Post deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting post:', error);
-    return NextResponse.json({ error: 'An error occurred while deleting the post' }, { status: 500 });
   }
 }

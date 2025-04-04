@@ -1,99 +1,48 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
-import { useSession } from 'next-auth/react';
-
-interface Post {
-  id: number;
-  title: string;
-  content: string;
-  author: string;
-  createdAt: string;
-  updatedAt: string;
-  categoryId?: number | null;
-  category?: { id: number; name: string };
-  tags?: string[];
-}
+import { useRouter, useParams } from 'next/navigation';
 
 export default function EditPost() {
-  const [post, setPost] = useState<Post | null>(null);
+  const { id } = useParams(); // URLのidを取得
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState('');
-  const [tags, setTags] = useState('');
+  const [author, setAuthor] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [id, setId] = useState<string | null>(null);
-  const [isClient, setIsClient] = useState(false);
-  const { data: session, status } = useSession();
+  const router = useRouter();
 
+  // 初期値のデータを取得
   useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient && status === 'unauthenticated') {
-      useRouter().push('/auth/signin');
-    }
-  }, [status, isClient]);
-
-  useEffect(() => {
-    if (isClient) {
-      const router = useRouter();
-      if (router.query.id) {
-        setId(router.query.id as string);
+    const fetchPost = async () => {
+      try {
+        const response = await fetch(`/api/posts/${id}`);
+        if (!response.ok) throw new Error('Failed to fetch post');
+        const data = await response.json();
+        setTitle(data.title);
+        setContent(data.content);
+        setAuthor(data.author);
+      } catch (error) {
+        console.error('Error fetching post:', error);
       }
-    }
-  }, [isClient]);
+    };
 
-  useEffect(() => {
-    if (id) {
-      fetch(`/api/posts/post?id=${id}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setPost(data);
-          setTitle(data.title);
-          setContent(data.content);
-          setCategory(data.category?.name || '');
-          setTags(data.tags?.join(', ') || '');
-        })
-        .catch((error) => {
-          console.error('Error fetching post:', error);
-          alert('Failed to load post data. Please try again.');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
+    if (id) fetchPost();
   }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!session || !session.user) {
-      alert('セッションが無効です。再度ログインしてください。');
-      useRouter().push('/auth/signin');
-      return;
-    }
     setIsSubmitting(true);
+  
     try {
-      const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag !== '');
-      const response = await fetch(`/api/posts/post?id=${id}`, {
+      const response = await fetch(`/api/posts/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          content,
-          category,
-          tags: tagsArray,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content }), // authorを削除
       });
-
+  
       if (response.ok) {
-        useRouter().push('/blog');
-        useRouter().refresh();
+        router.push('/blog');
+        router.refresh();
       } else {
         throw new Error('Failed to update post');
       }
@@ -104,14 +53,7 @@ export default function EditPost() {
       setIsSubmitting(false);
     }
   };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!post) {
-    return <div>Post not found.</div>;
-  }
+  
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -138,37 +80,24 @@ export default function EditPost() {
             id="content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             rows={5}
             required
           ></textarea>
         </div>
-        <div>
-          <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-            カテゴリー
+        {/* <div>
+          <label htmlFor="author" className="block text-sm font-medium text-gray-700 mb-1">
+            name
           </label>
           <input
             type="text"
-            id="category"
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+            id="author"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             required
           />
-        </div>
-        <div>
-          <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
-            タグ (カンマ区切り)
-          </label>
-          <input
-            type="text"
-            id="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-            placeholder="e.g. technology, programming, react"
-          />
-        </div>
+        </div> */}
         <button
           type="submit"
           className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"

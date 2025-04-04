@@ -37,9 +37,9 @@ export default function BlogPostDetail({ post }: BlogPostDetailProps) {
       
       {post.tags && post.tags.length > 0 && (
         <div className="mb-4">
-          {post.tags.map((tag: string) => (
-            <span key={tag} className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
-              {tag}
+          {post.tags.map((tag) => (
+            <span key={tag.id} className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2 mb-2">
+              {tag.name}
             </span>
           ))}
         </div>
